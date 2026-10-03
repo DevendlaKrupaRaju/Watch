@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: watchhub
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_vUNRaI0gST4e@ep-bold-union-b4tg2fcz-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - key: AUTH_SECRET
+        value: watchhub-super-secret-key-2024-xk9mPqR7vLnZwT3j
+      - key: LIVEKIT_URL
+        value: wss://watchhub-nd7axh87.livekit.cloud
+      - key: LIVEKIT_API_KEY
+        value: APIdPx4j7ay4PiV
+      - key: LIVEKIT_API_SECRET
+        value: tVWaIKeMWEoFAqOxaP2il9iqSwC13PEHxMTqquz7mXV
+      - key: PORT
+        value: 3000

@@ -14,6 +14,8 @@ import { Reactions } from '@/components/room/Reactions'
 import { HandRaise } from '@/components/room/HandRaise'
 import { PollCreator } from '@/components/room/PollCreator'
 import { PollDisplay } from '@/components/room/PollDisplay'
+import { InviteDialog } from '@/components/room/InviteDialog'
+import { RoomSettings } from '@/components/room/RoomSettings'
 import { useRoom } from '@/hooks/use-room'
 import { useSocket } from '@/hooks/use-socket'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
@@ -49,6 +51,29 @@ export default function RoomPage({ params }: { params: Promise<{ roomCode: strin
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [showPollCreator, setShowPollCreator] = useState(false)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false)
+
+  const handleUpdateRoomSettings = async (data: { name: string; description: string; maxParticipants: number }) => {
+    const res = await fetch(`/api/rooms/${roomCode}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const json = await res.json()
+    if (json.success) {
+      setRoom((prev) => prev ? { ...prev, name: data.name, description: data.description, maxParticipants: data.maxParticipants } : null)
+    } else {
+      throw new Error(json.error || 'Failed to update')
+    }
+  }
+
+  const handleEndRoom = async () => {
+    if (confirm('Are you sure you want to end this room for everyone?')) {
+      await fetch(`/api/rooms/${roomCode}`, { method: 'DELETE' })
+      router.push('/dashboard')
+    }
+  }
 
   const {
     onlineUsers,
@@ -175,6 +200,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomCode: strin
           memberCount={room.memberCount}
           onLock={lockRoom}
           onUnlock={unlockRoom}
+          onSettings={() => setShowSettingsDialog(true)}
+          onInvite={() => setShowInviteDialog(true)}
         />
       }
       mainContent={
@@ -273,6 +300,30 @@ export default function RoomPage({ params }: { params: Promise<{ roomCode: strin
       <PollCreator
         roomCode={roomCode}
         onClose={() => setShowPollCreator(false)}
+      />
+    )}
+
+    {/* Invite Dialog Modal (Phase 2) */}
+    <InviteDialog
+      roomCode={roomCode}
+      roomName={room.name}
+      isOpen={showInviteDialog}
+      onClose={() => setShowInviteDialog(false)}
+    />
+
+    {/* Room Settings Modal (Phase 2) */}
+    {isHost && (
+      <RoomSettings
+        roomCode={roomCode}
+        initialName={room.name}
+        initialDescription={room.description}
+        initialMaxParticipants={room.maxParticipants}
+        isLocked={room.isLocked}
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+        onUpdate={handleUpdateRoomSettings}
+        onToggleLock={room.isLocked ? unlockRoom : lockRoom}
+        onEndRoom={handleEndRoom}
       />
     )}
     </>

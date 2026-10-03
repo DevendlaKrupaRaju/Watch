@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, MessageCircle, X } from 'lucide-react'
+import { Users, MessageCircle, X, ChevronRight, ChevronLeft } from 'lucide-react'
 
 interface RoomLayoutProps {
   header: React.ReactNode
@@ -12,88 +12,157 @@ interface RoomLayoutProps {
 }
 
 export function RoomLayout({ header, mainContent, sidebar, chat, controls }: RoomLayoutProps) {
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [showChat, setShowChat] = useState(false)
+  const [activeTab, setActiveTab] = useState<'chat' | 'participants' | 'none'>('chat')
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-950 overflow-hidden">
       {/* Header */}
       {header}
 
-      {/* Main content area */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 p-4 overflow-auto">
+      {/* Main body area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Main Media/Player Area */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <div className="flex-1 overflow-hidden relative bg-black">
             {mainContent}
           </div>
+
+          {/* Bottom Controls Bar */}
           {controls && (
-            <div className="border-t border-gray-800/50 p-3">
+            <div className="border-t border-gray-800/60 bg-gray-900/90 backdrop-blur-md px-4 py-2.5 z-20 shrink-0">
               {controls}
             </div>
           )}
         </div>
 
-        {/* Desktop sidebar */}
-        <div className="hidden lg:flex w-72 flex-col border-l border-gray-800/50 bg-gray-900/30">
-          <div className="flex-1 overflow-y-auto p-3">
-            {sidebar}
+        {/* ── DESKTOP SIDEBAR (Tabbed: Chat or Participants) ── */}
+        <div className="hidden md:flex flex-col border-l border-gray-800/70 bg-gray-900/95 shrink-0 transition-all duration-300"
+          style={{ width: activeTab === 'none' ? '48px' : '340px' }}
+        >
+          {/* Top tab selector */}
+          <div className="flex items-center justify-between border-b border-gray-800/80 px-2 py-2 bg-gray-900 shrink-0">
+            {activeTab !== 'none' ? (
+              <>
+                <div className="flex items-center gap-1 bg-gray-800/80 p-0.5 rounded-lg">
+                  {chat && (
+                    <button
+                      onClick={() => setActiveTab('chat')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                        activeTab === 'chat'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('participants')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      activeTab === 'participants'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    People
+                  </button>
+                </div>
+                {/* Collapse button */}
+                <button
+                  onClick={() => setActiveTab('none')}
+                  title="Collapse sidebar"
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              /* Collapsed strip icons */
+              <div className="flex flex-col items-center gap-2 w-full py-1">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  title="Open Chat"
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setActiveTab('participants')}
+                  title="Open Participants"
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Desktop chat */}
-        {chat && (
-          <div className="hidden lg:flex w-80 flex-col border-l border-gray-800/50 bg-gray-900/30">
-            {chat}
-          </div>
-        )}
+          {/* Panel content */}
+          {activeTab !== 'none' && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {activeTab === 'chat' && chat && (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {chat}
+                </div>
+              )}
+              {activeTab === 'participants' && (
+                <div className="flex-1 overflow-y-auto p-3">
+                  {sidebar}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Mobile toggle buttons */}
-      <div className="lg:hidden fixed bottom-4 right-4 flex gap-2 z-50">
+      {/* ── MOBILE FLOATING BUTTONS ── */}
+      <div className="md:hidden fixed bottom-16 right-4 flex gap-2 z-40">
         <button
-          onClick={() => { setShowSidebar(!showSidebar); setShowChat(false) }}
-          className={`p-3 rounded-full shadow-lg transition-colors ${
-            showSidebar
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
+          onClick={() => { setActiveTab('participants'); setMobileOpen(true) }}
+          className="p-3 bg-gray-800 text-gray-300 hover:text-white rounded-full shadow-2xl border border-gray-700"
         >
           <Users className="w-5 h-5" />
         </button>
         {chat && (
           <button
-            onClick={() => { setShowChat(!showChat); setShowSidebar(false) }}
-            className={`p-3 rounded-full shadow-lg transition-colors ${
-              showChat
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
-            }`}
+            onClick={() => { setActiveTab('chat'); setMobileOpen(true) }}
+            className="p-3 bg-purple-600 text-white rounded-full shadow-2xl shadow-purple-900/50"
           >
             <MessageCircle className="w-5 h-5" />
           </button>
         )}
       </div>
 
-      {/* Mobile panels */}
-      {showSidebar && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-gray-950/80 backdrop-blur-sm" onClick={() => setShowSidebar(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-gray-900 border-l border-gray-800 p-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowSidebar(false)} className="absolute top-3 right-3 text-gray-400 hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-            {sidebar}
-          </div>
-        </div>
-      )}
-
-      {showChat && chat && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-gray-950/80 backdrop-blur-sm" onClick={() => setShowChat(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-gray-900 border-l border-gray-800 flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowChat(false)} className="absolute top-3 right-3 text-gray-400 hover:text-white z-10">
-              <X className="w-5 h-5" />
-            </button>
-            {chat}
+      {/* ── MOBILE OVERLAY DRAWER ── */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
+          <div className="absolute right-0 top-0 bottom-0 w-80 bg-gray-900 flex flex-col border-l border-gray-800" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-3 border-b border-gray-800">
+              <div className="flex gap-1 bg-gray-800 p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`px-3 py-1 text-xs font-medium rounded ${activeTab === 'chat' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}
+                >
+                  Chat
+                </button>
+                <button
+                  onClick={() => setActiveTab('participants')}
+                  className={`px-3 py-1 text-xs font-medium rounded ${activeTab === 'participants' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}
+                >
+                  People
+                </button>
+              </div>
+              <button onClick={() => setMobileOpen(false)} className="p-1 text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {activeTab === 'chat' && chat && <div className="flex-1 flex flex-col overflow-hidden">{chat}</div>}
+              {activeTab === 'participants' && <div className="flex-1 overflow-y-auto p-3">{sidebar}</div>}
+            </div>
           </div>
         </div>
       )}
